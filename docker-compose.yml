@@ -1,0 +1,57 @@
+version: "3"
+
+services:
+  rabbitmq:
+    platform: linux/arm64
+    image: rabbitmq:management-alpine
+    tty: true
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: "mikelopster"
+      RABBITMQ_DEFAULT_PASS: "password"
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+
+  postgres:
+    platform: linux/arm64
+    image: postgres:14-alpine
+    container_name: postgres
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: rootpassword
+      POSTGRES_DB: orders
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  pgadmin:
+    platform: linux/arm64
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: rootpassword
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "8081:80"
+    depends_on:
+      - postgres
+
+  app:
+    build: .
+    volumes:
+      - .:/app
+    working_dir: /app
+    depends_on:
+      - rabbitmq
+      - postgres
+    entrypoint: [ "tail", "-f", "/dev/null" ]
+
+volumes:
+  rabbitmq_data:
+    driver: local
+  postgres_data:
+    driver: local
